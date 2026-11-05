@@ -68,6 +68,7 @@ jobs:
             android_arch: aarch64
             packages: >-
               android-cmake android-environment jdk17-openjdk
+              ant
               android-aarch64-qt6-base android-aarch64-qt6-declarative
               android-aarch64-qt6-shadertools android-aarch64-qt6-svg
               android-aarch64-qt6-tools android-aarch64-qt6-translations
@@ -78,6 +79,7 @@ jobs:
             android_arch: x86-64
             packages: >-
               android-cmake android-environment jdk17-openjdk
+              ant
               android-x86-64-qt6-base android-x86-64-qt6-declarative
               android-x86-64-qt6-shadertools android-x86-64-qt6-svg
               android-x86-64-qt6-tools android-x86-64-qt6-translations
@@ -143,7 +145,18 @@ jobs:
           set -euo pipefail
           printf '\n[ownstuff]\nSigLevel = Optional TrustAll\nServer = https://martchus.dyn.f3l.de/repo/arch/$repo/os/$arch\n' >> /etc/pacman.conf
           pacman -Syu --noconfirm --needed
-          pacman -S --noconfirm --needed base-devel cmake curl git go ninja python unzip zip xz $REQUIRED_PACKAGES
+          pacman_args=(--noconfirm --needed)
+          if [[ "$BUILD_KIND" == android ]]; then
+            # Android SDK/NDK packages are installed with sdkmanager later; these satisfy Qt's Arch package dependencies.
+            pacman_args+=(
+              --assume-installed android-ndk=1.0
+              --assume-installed android-platform-37.0=1.0
+              --assume-installed android-sdk=1.0
+              --assume-installed android-sdk-build-tools=1.0
+              --assume-installed android-sdk-platform-tools=1.0
+            )
+          fi
+          pacman -S "${pacman_args[@]}" base-devel cmake curl git go ninja perl-yaml python unzip zip xz $REQUIRED_PACKAGES
           for tool in cmake git ninja go zip xz sha256sum tar; do
             command -v "$tool" >/dev/null || {
               echo "Required tool is missing: $tool" >&2
@@ -167,7 +180,7 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/sources"
 
       - name: Check out Syncthing Tray
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: sources/syncthingtray
           persist-credentials: false
@@ -318,7 +331,7 @@ jobs:
               -DNO_WIDGETS:BOOL=ON
               -DNO_TRAY:BOOL=ON
               -DQUICK_GUI:BOOL=OFF
-              -DWIDGETS_GUI:BOOL=OFF
+              -DWIDGETS_GUI:BOOL=ON
             )
           fi
           asset_base="$BUILD_PRODUCT"
@@ -339,7 +352,9 @@ jobs:
               ;;
             mingw|mingw-clang)
               if [[ "$BUILD_KIND" == mingw-clang ]]; then
+                set +u
                 source /usr/bin/mingw-clang-env aarch64-w64-mingw32
+                set -u
                 export MINGW_W64_CLANG_TARGET=aarch64-w64-mingw32
               fi
               cmake --preset "$BUILD_PRESET" "${common_options[@]}"
@@ -385,7 +400,7 @@ jobs:
           )
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.product }}-${{ matrix.target }}-${{ github.sha }}
           path: artifacts/*
