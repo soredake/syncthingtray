@@ -14,6 +14,18 @@ To avoid building c++utilities/qtutilities/qtforkawesome separately, follow the 
 [various build variables](https://github.com/Martchus/cpp-utilities/blob/master/doc/buildvariables.md) which
 can be passed to CMake to influence the build.
 
+### Continuous integration builds
+The [GitHub Actions workflow](../.github/workflows/build.yml) builds the Linux x86_64, Windows i686/x86_64/aarch64
+(Qt 5 and Qt 6 where applicable), and Android x86_64/aarch64 targets on pushes. It also builds the CLI for Linux
+x86_64 and Windows i686/x86_64/aarch64. The workflow uses Arch Linux cross-compilation presets and runs on a
+GitHub-hosted Ubuntu runner using the rolling Arch Linux `base-devel` container image. It builds the revision that
+triggered the workflow, clones the latest default-branch revisions of its build dependencies, and uses the latest
+`libsyncthing-latest` Syncthing branch. It installs the packages listed in its build matrix, including the
+corresponding ownstuff cross-compilation packages, in that isolated job environment.
+
+The job token is limited to read-only repository contents; completed builds and checksums are uploaded as workflow
+artifacts.
+
 ### Configuration of UI types
 Syncthing Tray supports a Qt Widgets based UI (enabled via the CMake argument `-DWIDGETS_GUI=ON`) and a
 Qt Quick based UI (enabled via the CMake argument `-DQUICK_GUI=ON`):

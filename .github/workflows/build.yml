@@ -1,0 +1,293 @@
+name: Build all release targets
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        include:
+          - target: linux-x86_64
+            product: syncthingtray
+            kind: linux
+            packages: >-
+              boost boost-libs extra-cmake-modules
+              qt6-base qt6-declarative qt6-shadertools qt6-svg qt6-tools
+          - target: windows-i686-qt5
+            product: syncthingtray
+            kind: mingw
+            preset: arch-i686-w64-mingw32
+            packages: >-
+              mingw-w64-cmake mingw-w64-gcc
+              mingw-w64-qt5-base mingw-w64-qt5-declarative
+              mingw-w64-qt5-svg mingw-w64-qt5-tools
+              qt5-base qt5-tools
+          - target: windows-x86_64-qt5
+            product: syncthingtray
+            kind: mingw
+            preset: arch-x86_64-w64-mingw32
+            packages: >-
+              mingw-w64-cmake mingw-w64-gcc
+              mingw-w64-qt5-base mingw-w64-qt5-declarative
+              mingw-w64-qt5-svg mingw-w64-qt5-tools
+              qt5-base qt5-tools
+          - target: windows-x86_64-qt6
+            product: syncthingtray
+            kind: mingw
+            preset: arch-x86_64-w64-mingw32-qt6
+            packages: >-
+              mingw-w64-cmake mingw-w64-gcc
+              mingw-w64-qt6-base mingw-w64-qt6-declarative
+              mingw-w64-qt6-svg mingw-w64-qt6-tools
+              qt6-base qt6-declarative qt6-shadertools qt6-tools
+          - target: windows-aarch64-qt6
+            product: syncthingtray
+            kind: mingw-clang
+            preset: arch-mingw-w64-clang
+            packages: >-
+              mingw-w64-clang-environment mingw-w64-clang-aarch64-cmake
+              mingw-w64-clang-aarch64-qt6-base
+              mingw-w64-clang-aarch64-qt6-declarative
+              mingw-w64-clang-aarch64-qt6-svg
+              mingw-w64-clang-aarch64-qt6-tools
+              qt6-base qt6-declarative qt6-shadertools qt6-tools
+          - target: android-aarch64
+            product: syncthingtray
+            kind: android
+            android_arch: aarch64
+            packages: >-
+              android-cmake android-ndk android-tools jdk17-openjdk
+              android-aarch64-qt6-base android-aarch64-qt6-declarative
+              android-aarch64-qt6-shadertools android-aarch64-qt6-svg
+              android-aarch64-qt6-tools android-aarch64-qt6-translations
+              qt6-base qt6-declarative qt6-shadertools qt6-tools
+          - target: android-x86_64
+            product: syncthingtray
+            kind: android
+            android_arch: x86-64
+            packages: >-
+              android-cmake android-ndk android-tools jdk17-openjdk
+              android-x86-64-qt6-base android-x86-64-qt6-declarative
+              android-x86-64-qt6-shadertools android-x86-64-qt6-svg
+              android-x86-64-qt6-tools android-x86-64-qt6-translations
+              qt6-base qt6-declarative qt6-shadertools qt6-tools
+          - target: linux-x86_64
+            product: syncthingctl
+            kind: linux
+            packages: >-
+              boost boost-libs extra-cmake-modules
+              qt6-base qt6-declarative qt6-shadertools qt6-svg qt6-tools
+          - target: windows-i686-qt5
+            product: syncthingctl
+            kind: mingw
+            preset: arch-i686-w64-mingw32
+            packages: >-
+              mingw-w64-cmake mingw-w64-gcc
+              mingw-w64-qt5-base mingw-w64-qt5-declarative
+              mingw-w64-qt5-svg mingw-w64-qt5-tools
+              qt5-base qt5-tools
+          - target: windows-x86_64-qt5
+            product: syncthingctl
+            kind: mingw
+            preset: arch-x86_64-w64-mingw32
+            packages: >-
+              mingw-w64-cmake mingw-w64-gcc
+              mingw-w64-qt5-base mingw-w64-qt5-declarative
+              mingw-w64-qt5-svg mingw-w64-qt5-tools
+              qt5-base qt5-tools
+          - target: windows-x86_64-qt6
+            product: syncthingctl
+            kind: mingw
+            preset: arch-x86_64-w64-mingw32-qt6
+            packages: >-
+              mingw-w64-cmake mingw-w64-gcc
+              mingw-w64-qt6-base mingw-w64-qt6-declarative
+              mingw-w64-qt6-svg mingw-w64-qt6-tools
+              qt6-base qt6-declarative qt6-shadertools qt6-tools
+          - target: windows-aarch64-qt6
+            product: syncthingctl
+            kind: mingw-clang
+            preset: arch-mingw-w64-clang
+            packages: >-
+              mingw-w64-clang-environment mingw-w64-clang-aarch64-cmake
+              mingw-w64-clang-aarch64-qt6-base
+              mingw-w64-clang-aarch64-qt6-declarative
+              mingw-w64-clang-aarch64-qt6-svg
+              mingw-w64-clang-aarch64-qt6-tools
+              qt6-base qt6-declarative qt6-shadertools qt6-tools
+
+    env:
+      BUILD_DIR: ${{ github.workspace }}/build
+      BUILD_TARGET: ${{ matrix.target }}
+      BUILD_PRODUCT: ${{ matrix.product }}
+      BUILD_KIND: ${{ matrix.kind }}
+      BUILD_PRESET: ${{ matrix.preset }}
+      ANDROID_ARCH: ${{ matrix.android_arch }}
+      REQUIRED_PACKAGES: ${{ matrix.packages }}
+
+    steps:
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '\n[ownstuff]\nSigLevel = Optional TrustAll\nServer = https://martchus.dyn.f3l.de/repo/arch/$repo/os/$arch\n' >> /etc/pacman.conf
+          pacman -Syu --noconfirm --needed
+          pacman -S --noconfirm --needed base-devel cmake git ninja zip xz $REQUIRED_PACKAGES
+          for tool in cmake git ninja go zip xz sha256sum tar; do
+            command -v "$tool" >/dev/null || {
+              echo "Required tool is missing: $tool" >&2
+              exit 1
+            }
+          done
+          if [[ "$BUILD_KIND" == android ]]; then
+            pacman -Q jdk17-openjdk >/dev/null
+            test -x /usr/bin/android-env
+          fi
+          if [[ "$BUILD_KIND" == mingw-clang ]]; then
+            test -x /usr/bin/mingw-clang-env
+          fi
+
+      - name: Clean workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf -- "$BUILD_DIR" "$GITHUB_WORKSPACE/stage" \
+            "$GITHUB_WORKSPACE/artifacts" "$GITHUB_WORKSPACE/sources"
+          mkdir -p "$GITHUB_WORKSPACE/sources"
+
+      - name: Check out Syncthing Tray
+        uses: actions/checkout@v4
+        with:
+          path: sources/syncthingtray
+          persist-credentials: false
+
+      - name: Check out build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/Martchus/cpp-utilities.git sources/c++utilities
+          git clone --depth 1 https://github.com/Martchus/qtutilities.git sources/qtutilities
+          git clone --depth 1 https://github.com/Martchus/qtforkawesome.git sources/qtforkawesome
+          git clone --depth 1 https://github.com/Martchus/subdirs.git sources/subdirs
+          git clone --depth 1 https://github.com/ForkAwesome/Fork-Awesome.git sources/forkawesome
+          mkdir -p sources/syncthingtray/syncthing/go/src/github.com/syncthing
+          git clone --depth 1 --branch libsyncthing-latest \
+            https://github.com/Martchus/syncthing.git \
+            sources/syncthingtray/syncthing/go/src/github.com/syncthing/syncthing
+
+      - name: Build and package
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_dir="$GITHUB_WORKSPACE/sources"
+          cmake_source="$source_dir/subdirs/syncthingtray"
+          forkawesome="$source_dir/forkawesome"
+          font="$forkawesome/fonts/forkawesome-webfont.woff2"
+          if [[ "$BUILD_KIND" == android ]]; then
+            font="$forkawesome/fonts/forkawesome-webfont.ttf"
+          fi
+          icon_definitions="$forkawesome/src/icons/icons.yml"
+          build_jobs="$(nproc)"
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          cd "$cmake_source"
+
+          common_options=(
+            -DAPPEND_GIT_REVISION:BOOL=OFF
+            -DBUILTIN_TRANSLATIONS:BOOL=ON
+            -DNO_FILE_ITEM_ACTION_PLUGIN:BOOL=ON
+            -DNO_LIBSYNCTHING:BOOL=OFF
+            -DNO_PLASMOID:BOOL=ON
+            -DUSE_BOOST_PROCESS:BOOL=OFF
+            -DUSE_LIBSYNCTHING:BOOL=ON
+            -DWEBVIEW_PROVIDER:STRING=none
+            -DJS_PROVIDER:STRING=qml
+            -DFORK_AWESOME_FONT_FILE:FILEPATH="$font"
+            -DFORK_AWESOME_ICON_DEFINITIONS:FILEPATH="$icon_definitions"
+          )
+          if [[ "$BUILD_PRODUCT" == syncthingctl ]]; then
+            common_options+=(
+              -DNO_MODEL:BOOL=ON
+              -DNO_WIDGETS:BOOL=ON
+              -DNO_TRAY:BOOL=ON
+              -DQUICK_GUI:BOOL=OFF
+              -DWIDGETS_GUI:BOOL=OFF
+            )
+          fi
+          asset_base="$BUILD_PRODUCT"
+
+          case "$BUILD_KIND" in
+            linux)
+              cmake -S "$cmake_source" -B "$BUILD_DIR/native" -G Ninja \
+                -DCMAKE_BUILD_TYPE:STRING=Release \
+                -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+                -DBUILD_SHARED_LIBS:BOOL=ON \
+                -DQT_PACKAGE_PREFIX:STRING=Qt6 \
+                -DKF_PACKAGE_PREFIX:STRING=KF6 \
+                "${common_options[@]}"
+              cmake --build "$BUILD_DIR/native" --parallel "$build_jobs"
+              DESTDIR="$GITHUB_WORKSPACE/stage" cmake --install "$BUILD_DIR/native"
+              XZ_OPT='-T0 -1' tar -cJf "$GITHUB_WORKSPACE/artifacts/${asset_base}-${BUILD_TARGET}.tar.xz" \
+                -C "$GITHUB_WORKSPACE/stage" .
+              ;;
+            mingw|mingw-clang)
+              if [[ "$BUILD_KIND" == mingw-clang ]]; then
+                source /usr/bin/mingw-clang-env aarch64-w64-mingw32
+                export MINGW_W64_CLANG_TARGET=aarch64-w64-mingw32
+              fi
+              cmake --preset "$BUILD_PRESET" "${common_options[@]}"
+              cmake --build --preset "$BUILD_PRESET" --parallel "$build_jobs"
+              DESTDIR="$GITHUB_WORKSPACE/stage" \
+                cmake --build --preset "$BUILD_PRESET" \
+                  --target install-mingw-w64-strip --parallel "$build_jobs"
+              (
+                cd "$GITHUB_WORKSPACE/stage"
+                zip -0qr "$GITHUB_WORKSPACE/artifacts/${asset_base}-${BUILD_TARGET}.zip" .
+              )
+              ;;
+            android)
+              export PATH="/usr/lib/jvm/java-17-openjdk/bin:$PATH"
+              source /usr/bin/android-env "$ANDROID_ARCH"
+              cmake --preset arch-android \
+                "${common_options[@]}" \
+                -DEXTENDED_CLIENT_AREA:BOOL=ON
+              cmake --build --preset arch-android --parallel "$build_jobs"
+              apk_dir="$BUILD_DIR/syncthingtray/arch-android-${ANDROID_ABI}/syncthingtray/tray/android-build/build/outputs"
+              apk="$(find "$apk_dir" -type f -name '*signed.apk' -print -quit)"
+              if [[ -z "$apk" ]]; then
+                echo "No signed APK was produced under $apk_dir" >&2
+                exit 1
+              fi
+              cp "$apk" "$GITHUB_WORKSPACE/artifacts/${asset_base}-${BUILD_TARGET}.apk"
+              ;;
+            *)
+              echo "Unknown build kind: $BUILD_KIND" >&2
+              exit 1
+              ;;
+          esac
+
+          (
+            cd "$GITHUB_WORKSPACE/artifacts"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+          )
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.product }}-${{ matrix.target }}-${{ github.sha }}
+          path: artifacts/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
