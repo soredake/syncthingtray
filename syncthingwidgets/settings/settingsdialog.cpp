@@ -2019,7 +2019,9 @@ static void replaceProcess()
         return;
     }
     auto *const process = new Data::SyncthingProcess();
-    QObject::connect(process, &Data::SyncthingProcess::finished, process, &QObject::deleteLater);
+    QObject::connect(process,
+        static_cast<void (Data::SyncthingProcess::*)(int, QProcess::ExitStatus)>(&Data::SyncthingProcess::finished), process,
+        &QObject::deleteLater);
     QObject::connect(process, &Data::SyncthingProcess::errorOccurred, process, [process] {
         auto messageBox = QMessageBox();
         messageBox.setWindowTitle(QStringLiteral("Syncthing"));

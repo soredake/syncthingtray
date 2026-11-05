@@ -28,6 +28,7 @@ tools, and newest stable Android platform available. The Android target SDK is c
 `SYNCTHINGTRAY_ANDROID_TARGET_SDK_VERSION` (default 37); CI sets it to the installed platform version. The
 Android cross-compilation packages declare SDK dependencies which are not available in the Arch repositories;
 CI satisfies those package metadata dependencies while installing the actual SDK components with `sdkmanager`.
+The generated APK artifacts are signed with Qt's default debug key, not a production release key.
 The uploaded Linux and Windows bundles contain runtime files only; static and import libraries (`.a`) are removed
 because they are only needed when linking other programs, not to run Syncthing Tray or `syncthingctl`.
 

@@ -420,7 +420,7 @@ if (ANDROID)
             PROPERTY QT_ANDROID_EXTRA_LIBS "${CMAKE_CURRENT_BINARY_DIR}/lib${ANDROID_SIGNAL_HANDLER_LIBRARY}.so")
     endif ()
 
-    set(QT_ANDROID_SIGN_APK ON)
+    set(QT_ANDROID_SIGN_APK OFF)
     if (COMMAND _qt_internal_configure_android_multiabi_target)
         _qt_internal_configure_android_multiabi_target(${META_TARGET_NAME}) # required as of Qt 6.9.0 (probably Qt bug)
     endif ()
