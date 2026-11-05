@@ -350,8 +350,10 @@ jobs:
               cmake --build "$BUILD_DIR/native" --parallel "$build_jobs"
               DESTDIR="$GITHUB_WORKSPACE/stage" cmake --install "$BUILD_DIR/native"
               find "$GITHUB_WORKSPACE/stage" -type f -name '*.a' -delete
-              XZ_OPT='-T0 -1' tar -cJf "$GITHUB_WORKSPACE/artifacts/${asset_base}-${BUILD_TARGET}.tar.xz" \
-                -C "$GITHUB_WORKSPACE/stage" .
+              if [[ "$BUILD_PRODUCT" == syncthingtray ]]; then
+                find "$GITHUB_WORKSPACE/stage" -type f -name 'syncthingctl*' -delete
+              fi
+              cp -a "$GITHUB_WORKSPACE/stage/." "$GITHUB_WORKSPACE/artifacts/"
               ;;
             mingw|mingw-clang)
               if [[ "$BUILD_KIND" == mingw-clang ]]; then
@@ -412,7 +414,7 @@ jobs:
 
           (
             cd "$GITHUB_WORKSPACE/artifacts"
-            find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+            find . -type f ! -name SHA256SUMS -print0 \
               | sort -z \
               | xargs -0 sha256sum > SHA256SUMS
           )
