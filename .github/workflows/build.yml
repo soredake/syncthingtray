@@ -381,10 +381,7 @@ jobs:
                 cp "$source_dir/syncthingtray/LICENSES-windows-distribution.md" \
                   "$bundle_dir/${asset_base}-${BUILD_TARGET}-LICENSES.md"
               fi
-              (
-                cd "$bundle_dir"
-                zip -0qr "$GITHUB_WORKSPACE/artifacts/${asset_base}-${BUILD_TARGET}.zip" .
-              )
+              cp -a "$bundle_dir/." "$GITHUB_WORKSPACE/artifacts/"
               ;;
             android)
               export PATH="/usr/lib/jvm/java-17-openjdk/bin:$PATH"
