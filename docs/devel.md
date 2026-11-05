@@ -30,7 +30,9 @@ Android cross-compilation packages declare SDK dependencies which are not availa
 CI satisfies those package metadata dependencies while installing the actual SDK components with `sdkmanager`.
 The generated APK artifacts are signed with Qt's default debug key, not a production release key.
 The uploaded Linux and Windows bundles contain runtime files only; static and import libraries (`.a`) are removed
-because they are only needed when linking other programs, not to run Syncthing Tray or `syncthingctl`.
+because they are only needed when linking other programs, not to run Syncthing Tray or `syncthingctl`. Windows ZIPs
+place their runtime files at the archive root and include the bundled third-party license notices for Syncthing Tray.
+The tray bundles omit `syncthingctl`; it is included only in the separate CLI bundles.
 
 The job token is limited to read-only repository contents; completed builds and checksums are uploaded as workflow
 artifacts.

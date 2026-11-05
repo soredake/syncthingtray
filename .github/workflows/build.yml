@@ -177,7 +177,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf -- "$BUILD_DIR" "$GITHUB_WORKSPACE/stage" \
+          rm -rf -- "$BUILD_DIR" "$GITHUB_WORKSPACE/stage" "$GITHUB_WORKSPACE/package" \
             "$GITHUB_WORKSPACE/artifacts" "$GITHUB_WORKSPACE/sources"
           mkdir -p "$GITHUB_WORKSPACE/sources"
 
@@ -366,8 +366,23 @@ jobs:
                 cmake --build --preset "$BUILD_PRESET" \
                   --target install-mingw-w64-strip --parallel "$build_jobs"
               find "$GITHUB_WORKSPACE/stage" -type f -name '*.a' -delete
+              if [[ "$BUILD_PRODUCT" == syncthingtray ]]; then
+                find "$GITHUB_WORKSPACE/stage" -type f -name 'syncthingctl*' -delete
+              fi
+              install_bin="$(find "$GITHUB_WORKSPACE/stage" -type d -name bin -print -quit)"
+              if [[ -z "$install_bin" ]]; then
+                echo "No installed bin directory found under $GITHUB_WORKSPACE/stage" >&2
+                exit 1
+              fi
+              bundle_dir="$GITHUB_WORKSPACE/package"
+              mkdir -p "$bundle_dir"
+              cp -a "$install_bin/." "$bundle_dir/"
+              if [[ "$BUILD_PRODUCT" == syncthingtray ]]; then
+                cp "$source_dir/syncthingtray/LICENSES-windows-distribution.md" \
+                  "$bundle_dir/${asset_base}-${BUILD_TARGET}-LICENSES.md"
+              fi
               (
-                cd "$GITHUB_WORKSPACE/stage"
+                cd "$bundle_dir"
                 zip -0qr "$GITHUB_WORKSPACE/artifacts/${asset_base}-${BUILD_TARGET}.zip" .
               )
               ;;
