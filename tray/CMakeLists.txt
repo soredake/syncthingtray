@@ -300,13 +300,14 @@ endif ()
 # configure creating an Android package using androiddeployqt
 if (ANDROID)
     set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
+    set(SYNCTHINGTRAY_ANDROID_TARGET_SDK_VERSION 37 CACHE STRING "Android target SDK version")
     set_target_properties(
         ${META_TARGET_NAME}
         PROPERTIES QT_ANDROID_PACKAGE_NAME "${META_PROJECT_RDNS}"
                    QT_ANDROID_VERSION_NAME "${META_APP_VERSION}"
                    QT_ANDROID_VERSION_CODE "1"
                    QT_ANDROID_PACKAGE_SOURCE_DIR "${ANDROID_PACKAGE_SOURCE_DIR}"
-                   QT_ANDROID_TARGET_SDK_VERSION "37")
+                   QT_ANDROID_TARGET_SDK_VERSION "${SYNCTHINGTRAY_ANDROID_TARGET_SDK_VERSION}")
     option(FORCE_WIDGETS_GUI_ON_ANDOROID "forces using the Qt Widgets GUI on Android" OFF)
     if (QUICK_GUI AND NOT FORCE_WIDGETS_GUI_ON_ANDOROID)
         set(ANDROID_APPLICATION_ARGUMENTS "qt-quick-gui")

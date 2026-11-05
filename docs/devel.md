@@ -22,6 +22,10 @@ GitHub-hosted Ubuntu runner using the rolling Arch Linux `base-devel` container 
 triggered the workflow, clones the latest default-branch revisions of its build dependencies, and uses the latest
 `libsyncthing-latest` Syncthing branch. It installs the packages listed in its build matrix, including the
 corresponding ownstuff cross-compilation packages, in that isolated job environment.
+All jobs install Go for building the bundled Syncthing library. Android jobs also install Google's command-line
+tools and use `sdkmanager` to install the current NDK, build tools, platform tools, and newest stable Android
+platform available. The Android target SDK is configurable with `SYNCTHINGTRAY_ANDROID_TARGET_SDK_VERSION`
+(default 37); CI sets it to the installed platform version.
 
 The job token is limited to read-only repository contents; completed builds and checksums are uploaded as workflow
 artifacts.

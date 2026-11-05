@@ -67,7 +67,7 @@ jobs:
             kind: android
             android_arch: aarch64
             packages: >-
-              android-cmake android-ndk android-tools jdk17-openjdk
+              android-cmake android-environment jdk17-openjdk
               android-aarch64-qt6-base android-aarch64-qt6-declarative
               android-aarch64-qt6-shadertools android-aarch64-qt6-svg
               android-aarch64-qt6-tools android-aarch64-qt6-translations
@@ -77,7 +77,7 @@ jobs:
             kind: android
             android_arch: x86-64
             packages: >-
-              android-cmake android-ndk android-tools jdk17-openjdk
+              android-cmake android-environment jdk17-openjdk
               android-x86-64-qt6-base android-x86-64-qt6-declarative
               android-x86-64-qt6-shadertools android-x86-64-qt6-svg
               android-x86-64-qt6-tools android-x86-64-qt6-translations
@@ -143,7 +143,7 @@ jobs:
           set -euo pipefail
           printf '\n[ownstuff]\nSigLevel = Optional TrustAll\nServer = https://martchus.dyn.f3l.de/repo/arch/$repo/os/$arch\n' >> /etc/pacman.conf
           pacman -Syu --noconfirm --needed
-          pacman -S --noconfirm --needed base-devel cmake git ninja zip xz $REQUIRED_PACKAGES
+          pacman -S --noconfirm --needed base-devel cmake curl git go ninja python unzip zip xz $REQUIRED_PACKAGES
           for tool in cmake git ninja go zip xz sha256sum tar; do
             command -v "$tool" >/dev/null || {
               echo "Required tool is missing: $tool" >&2
@@ -171,6 +171,103 @@ jobs:
         with:
           path: sources/syncthingtray
           persist-credentials: false
+
+      - name: Install Android SDK and NDK
+        if: matrix.kind == 'android'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_root=/opt/android-sdk
+          export PATH="/usr/lib/jvm/java-17-openjdk/bin:$PATH"
+          metadata_url=https://dl.google.com/android/repository/repository2-1.xml
+          python - "$metadata_url" > "$RUNNER_TEMP/android-sdk-metadata" <<'PY'
+          import re
+          import sys
+          import urllib.request
+          from urllib.parse import urljoin
+          import xml.etree.ElementTree as ET
+
+          metadata_url = sys.argv[1]
+          root = ET.parse(urllib.request.urlopen(metadata_url)).getroot()
+
+          def children(element, name):
+              return [child for child in element if child.tag.rsplit("}", 1)[-1] == name]
+
+          packages = children(root, "remotePackage")
+
+          command_line_tools = next(
+              package for package in packages
+              if package.get("path") == "cmdline-tools;latest"
+          )
+          archive = next(
+              archive for archive in children(command_line_tools, "archives")[0]
+              if any(child.text == "linux" for child in children(archive, "host-os"))
+          )
+          complete = children(archive, "complete")[0]
+          checksum = children(complete, "checksum")[0].text
+          tools_url = urljoin(metadata_url, children(complete, "url")[0].text)
+
+          ndk_versions = [
+              package.get("path").split(";", 1)[1]
+              for package in packages
+              if re.fullmatch(r"ndk;\d+(?:\.\d+)+", package.get("path", ""))
+          ]
+          build_tool_versions = [
+              package.get("path").split(";", 1)[1]
+              for package in packages
+              if re.fullmatch(r"build-tools;\d+(?:\.\d+)+", package.get("path", ""))
+          ]
+          platform_versions = [
+              int(match.group(1))
+              for package in packages
+              if (match := re.fullmatch(r"platforms;android-(\d+)", package.get("path", "")))
+          ]
+          if not ndk_versions or not build_tool_versions or not platform_versions:
+              raise SystemExit("Android repository metadata lacks a stable NDK, build-tools, or platform")
+
+          print(tools_url)
+          print(checksum)
+          print(max(ndk_versions, key=lambda version: tuple(map(int, version.split(".")))))
+          print(max(build_tool_versions, key=lambda version: tuple(map(int, version.split(".")))))
+          print(max(platform_versions))
+          PY
+          mapfile -t sdk_metadata < "$RUNNER_TEMP/android-sdk-metadata"
+          tools_url="${sdk_metadata[0]}"
+          tools_sha1="${sdk_metadata[1]}"
+          ndk_version="${sdk_metadata[2]}"
+          build_tools_version="${sdk_metadata[3]}"
+          target_sdk="${sdk_metadata[4]}"
+
+          archive="$RUNNER_TEMP/android-command-line-tools.zip"
+          curl --fail --location --silent --show-error "$tools_url" --output "$archive"
+          echo "$tools_sha1  $archive" | sha1sum --check --status
+          mkdir -p "$sdk_root/cmdline-tools"
+          unzip -q "$archive" -d "$sdk_root/cmdline-tools"
+          mv "$sdk_root/cmdline-tools/cmdline-tools" "$sdk_root/cmdline-tools/latest"
+
+          sdkmanager="$sdk_root/cmdline-tools/latest/bin/sdkmanager"
+          set +e
+          set +o pipefail
+          yes | "$sdkmanager" --sdk_root="$sdk_root" --licenses >/dev/null
+          sdkmanager_status="${PIPESTATUS[1]}"
+          set -euo pipefail
+          if [[ "$sdkmanager_status" -ne 0 ]]; then
+            echo "Accepting Android SDK licenses failed (sdkmanager exit $sdkmanager_status)" >&2
+            exit "$sdkmanager_status"
+          fi
+          "$sdkmanager" --sdk_root="$sdk_root" --install \
+            "build-tools;$build_tools_version" \
+            "ndk;$ndk_version" \
+            "platform-tools" \
+            "platforms;android-$target_sdk"
+
+          {
+            echo "ANDROID_HOME=$sdk_root"
+            echo "ANDROID_SDK_ROOT=$sdk_root"
+            echo "ANDROID_NDK_HOME=$sdk_root/ndk/$ndk_version"
+            echo "ANDROID_NDK_VERSION=$ndk_version"
+            echo "ANDROID_TARGET_SDK_VERSION=$target_sdk"
+          } >> "$GITHUB_ENV"
 
       - name: Check out build dependencies
         shell: bash
@@ -258,8 +355,12 @@ jobs:
             android)
               export PATH="/usr/lib/jvm/java-17-openjdk/bin:$PATH"
               source /usr/bin/android-env "$ANDROID_ARCH"
+              export ANDROID_HOME=/opt/android-sdk
+              export ANDROID_SDK_ROOT="$ANDROID_HOME"
+              export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
               cmake --preset arch-android \
                 "${common_options[@]}" \
+                -DSYNCTHINGTRAY_ANDROID_TARGET_SDK_VERSION="$ANDROID_TARGET_SDK_VERSION" \
                 -DEXTENDED_CLIENT_AREA:BOOL=ON
               cmake --build --preset arch-android --parallel "$build_jobs"
               apk_dir="$BUILD_DIR/syncthingtray/arch-android-${ANDROID_ABI}/syncthingtray/tray/android-build/build/outputs"
