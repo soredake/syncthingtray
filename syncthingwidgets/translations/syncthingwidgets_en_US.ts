@@ -3712,8 +3712,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings/settingsdialog.cpp" line="981"/>
-        <source>This is achieved by adding a registry key under &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt; so the setting only affects the current user. Note that the startup entry is invalidated when moving &lt;i&gt;syncthingtray.exe&lt;/i&gt;.</source>
+        <location filename="../settings/settingsdialog.cpp" line="986"/>
+        <source>This is achieved by adding a shortcut to the current user's Startup folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

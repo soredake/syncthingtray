@@ -3733,9 +3733,9 @@
         <translation>Pour cela, un fichier *.desktop est ajouté sous &lt;i&gt;~/.config/autostart&lt;/i&gt;, donc ce paramètre n&apos;affecte que l&apos;utilisateur actuel.</translation>
     </message>
     <message>
-        <location filename="../settings/settingsdialog.cpp" line="981"/>
-        <source>This is achieved by adding a registry key under &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt; so the setting only affects the current user. Note that the startup entry is invalidated when moving &lt;i&gt;syncthingtray.exe&lt;/i&gt;.</source>
-        <translation>Pour cela, une clé de registre est ajoutée sous &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt;, donc ce paramètre n&apos;affecte que l&apos;utilisateur actuel. Notez que l&apos;entrée de démarrage est invalidée lors du déplacement de &lt;i&gt;syncthingtray.exe&lt;/i&gt;.</translation>
+        <location filename="../settings/settingsdialog.cpp" line="986"/>
+        <source>This is achieved by adding a shortcut to the current user's Startup folder.</source>
+        <translation>Cela se fait en ajoutant un raccourci au dossier de démarrage de l&apos;utilisateur actuel.</translation>
     </message>
     <message>
         <location filename="../settings/settingsdialog.cpp" line="985"/>

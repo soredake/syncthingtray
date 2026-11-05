@@ -4462,9 +4462,9 @@
         <translation>Durch das Hinzufügen einer *.desktop-Datei unter &lt;i&gt;~/.config/autostart&lt;/i&gt; realisiert - betrifft also nur den aktuellen Benutzer.</translation>
     </message>
     <message>
-        <location filename="../settings/settingsdialog.cpp" line="981"/>
-        <source>This is achieved by adding a registry key under &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt; so the setting only affects the current user. Note that the startup entry is invalidated when moving &lt;i&gt;syncthingtray.exe&lt;/i&gt;.</source>
-        <translation>Durch das Hinzufügen eines Registry-Schlüssels unter &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt; realisiert - betrifft also nur den aktuellen Benutzer.</translation>
+        <location filename="../settings/settingsdialog.cpp" line="986"/>
+        <source>This is achieved by adding a shortcut to the current user's Startup folder.</source>
+        <translation>Dies wird durch Hinzufügen einer Verknüpfung zum Autostartordner des aktuellen Benutzers erreicht.</translation>
     </message>
     <message>
         <location filename="../settings/settingsdialog.cpp" line="985"/>

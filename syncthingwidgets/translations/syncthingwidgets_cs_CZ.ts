@@ -3715,9 +3715,9 @@
         <translation>Toho je dosaženo přidáním souboru *.desktop do &lt;i&gt;~/.config/autostart&lt;/i&gt;, takže nastavení ovlivní pouze aktuálního uživatele.</translation>
     </message>
     <message>
-        <location filename="../settings/settingsdialog.cpp" line="981"/>
-        <source>This is achieved by adding a registry key under &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt; so the setting only affects the current user. Note that the startup entry is invalidated when moving &lt;i&gt;syncthingtray.exe&lt;/i&gt;.</source>
-        <translation>Toho je dosaženo přidáním klíče registru do &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt;, takže nastavení ovlivní pouze aktuálního uživatele. Upozorňujeme, že položka spuštění přestane být platná při přesunutí souboru &lt;i&gt;syncthingtray.exe&lt;/i&gt;.</translation>
+        <location filename="../settings/settingsdialog.cpp" line="986"/>
+        <source>This is achieved by adding a shortcut to the current user's Startup folder.</source>
+        <translation>Toho je dosaženo přidáním zástupce do složky Po spuštění aktuálního uživatele.</translation>
     </message>
     <message>
         <location filename="../settings/settingsdialog.cpp" line="985"/>

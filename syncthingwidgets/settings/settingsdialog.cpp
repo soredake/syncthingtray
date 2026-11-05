@@ -62,9 +62,13 @@
 #include <QRegularExpressionMatch>
 #include <QStandardPaths>
 #elif defined(PLATFORM_WINDOWS)
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 #include <QSettings>
+#include <QStandardPaths>
 #elif defined(PLATFORM_MAC)
 #include <QFileInfo>
 #endif
@@ -979,8 +983,7 @@ QWidget *AutostartOptionPage::setupWidget()
         "This is achieved by adding a *.desktop file under <i>~/.config/autostart</i> so the setting only affects the current user."));
 #elif !defined(SYNCTHINGWIDGETS_AUTOSTART_DISABLED) && defined(PLATFORM_WINDOWS)
     ui()->platformNoteLabel->setText(QCoreApplication::translate("QtGui::AutostartOptionPage",
-        "This is achieved by adding a registry key under <i>HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run</i> so the setting "
-        "only affects the current user. Note that the startup entry is invalidated when moving <i>syncthingtray.exe</i>."));
+        "This is achieved by adding a shortcut to the current user's Startup folder."));
 #elif !defined(SYNCTHINGWIDGETS_AUTOSTART_DISABLED) && defined(PLATFORM_MAC)
     ui()->platformNoteLabel->setText(QCoreApplication::translate("QtGui::AutostartOptionPage",
         "This is achieved by adding a *.plist file under <i>~/Library/LaunchAgents</i> so the setting only affects the current user."));
@@ -1006,6 +1009,14 @@ static std::optional<QString> readQuotedPath(const QRegularExpression &regex, co
     return captured.isNull() ? std::nullopt : std::make_optional(captured);
 }
 /// \endcond
+#endif
+
+#if defined(PLATFORM_WINDOWS)
+static QString startupShortcutPath()
+{
+    const auto applicationsPath = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+    return applicationsPath.isEmpty() ? QString() : QDir(applicationsPath).filePath(QStringLiteral("Startup/" PROJECT_NAME ".lnk"));
+}
 #endif
 
 /*!
@@ -1039,10 +1050,16 @@ std::optional<QString> configuredAutostartPath()
     return readQuotedPath(regex, data);
 #elif defined(PLATFORM_WINDOWS)
     static const auto regex = QRegularExpression(QStringLiteral("(\"([^\"\\n]*)\"|([^\\s\\n]*))"));
-    return readQuotedPath(regex,
-        QSettings(QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), QSettings::NativeFormat)
-            .value(QStringLiteral(PROJECT_NAME))
-            .toString());
+    const auto shortcutPath = startupShortcutPath();
+    const auto shortcut = QFileInfo(shortcutPath);
+    if (shortcut.exists()) {
+        const auto targetPath = shortcut.symLinkTarget();
+        return targetPath.isEmpty() ? std::nullopt : std::make_optional(targetPath);
+    }
+    const auto settings = QSettings(QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), QSettings::NativeFormat);
+    return settings.contains(QStringLiteral(PROJECT_NAME))
+        ? readQuotedPath(regex, settings.value(QStringLiteral(PROJECT_NAME)).toString())
+        : std::make_optional(QString());
 #else
     return std::nullopt;
 #endif
@@ -1067,7 +1084,7 @@ QString supposedAutostartPath()
 
 /*!
  * \brief Sets the \a path of the application's autostart entry or removes the entry if \a path is empty.
- * \sa See https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys for Windows implementation.
+ * \remarks On Windows, the entry is a shortcut in the current user's Startup folder.
  */
 bool setAutostartPath(const QString &path)
 {
@@ -1105,14 +1122,28 @@ bool setAutostartPath(const QString &path)
     }
 
 #elif defined(PLATFORM_WINDOWS)
-    auto settings = QSettings(QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), QSettings::NativeFormat);
-    if (!path.isEmpty()) {
-        settings.setValue(QStringLiteral(PROJECT_NAME), QStringLiteral("\"%1\"").arg(path));
-    } else {
-        settings.remove(QStringLiteral(PROJECT_NAME));
+    const auto shortcutPath = startupShortcutPath();
+    if (shortcutPath.isEmpty()) {
+        return false;
     }
+    auto shortcut = QFile(shortcutPath);
+    if (!path.isEmpty()) {
+        if (!QDir().mkpath(QFileInfo(shortcutPath).absolutePath())) {
+            return false;
+        }
+        if (shortcut.exists() && !shortcut.remove()) {
+            return false;
+        }
+        if (!QFile::link(path, shortcutPath)) {
+            return false;
+        }
+    } else if (shortcut.exists() && !shortcut.remove()) {
+        return false;
+    }
+    auto settings = QSettings(QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), QSettings::NativeFormat);
+    settings.remove(QStringLiteral(PROJECT_NAME));
     settings.sync();
-    return true;
+    return settings.status() == QSettings::NoError;
 
 #elif defined(PLATFORM_MAC)
     const auto libraryPath = QDir::home().filePath(QStringLiteral("Library"));
@@ -1166,8 +1197,9 @@ bool isAutostartEnabled()
     }
     return false;
 #elif defined(PLATFORM_WINDOWS)
-    return QSettings(QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), QSettings::NativeFormat)
-        .contains(QStringLiteral(PROJECT_NAME));
+    return QFileInfo::exists(startupShortcutPath())
+        || QSettings(QStringLiteral("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), QSettings::NativeFormat)
+               .contains(QStringLiteral(PROJECT_NAME));
 #elif defined(PLATFORM_MAC)
     return QFileInfo(QDir::home(), QStringLiteral("Library/LaunchAgents/" PROJECT_NAME ".plist")).isReadable();
 #else

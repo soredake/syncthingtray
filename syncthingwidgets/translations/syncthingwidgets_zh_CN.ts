@@ -3908,9 +3908,9 @@
         <translation>这是通过在 &lt;i&gt;~/.config/autostart&lt;/i&gt; 下添加 *.desktop 文件来实现的，因此该设置仅影响当前用户。</translation>
     </message>
     <message>
-        <location filename="../settings/settingsdialog.cpp" line="981"/>
-        <source>This is achieved by adding a registry key under &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt; so the setting only affects the current user. Note that the startup entry is invalidated when moving &lt;i&gt;syncthingtray.exe&lt;/i&gt;.</source>
-        <translation>这是通过在 &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt; 下添加注册表项来实现的，因此该设置仅影响当前用户。 请注意，移动 &lt;i&gt;syncthingtray.exe&lt;/i&gt; 时启动项无效。</translation>
+        <location filename="../settings/settingsdialog.cpp" line="986"/>
+        <source>This is achieved by adding a shortcut to the current user's Startup folder.</source>
+        <translation>这是通过向当前用户的启动文件夹添加快捷方式实现的。</translation>
     </message>
     <message>
         <location filename="../settings/settingsdialog.cpp" line="985"/>

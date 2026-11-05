@@ -4291,9 +4291,9 @@
         <translation>Это достигается путем добавления файла *.desktop в &lt;i&gt;~/.config/autostart&lt;/i&gt;, чтобы настройка влияла только на текущего пользователя.</translation>
     </message>
     <message>
-        <location filename="../settings/settingsdialog.cpp" line="981"/>
-        <source>This is achieved by adding a registry key under &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt; so the setting only affects the current user. Note that the startup entry is invalidated when moving &lt;i&gt;syncthingtray.exe&lt;/i&gt;.</source>
-        <translation>Это достигается путем добавления ключа реестра в &lt;i&gt;HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run&lt;/i&gt;, чтобы настройка влияла только на текущего пользователя. Обратите внимание, что запись запуска становится недействительной при перемещении &lt;i&gt;syncthingtray.exe&lt;/i&gt;.</translation>
+        <location filename="../settings/settingsdialog.cpp" line="986"/>
+        <source>This is achieved by adding a shortcut to the current user's Startup folder.</source>
+        <translation>Это достигается добавлением ярлыка в папку автозагрузки текущего пользователя.</translation>
     </message>
     <message>
         <location filename="../settings/settingsdialog.cpp" line="985"/>
