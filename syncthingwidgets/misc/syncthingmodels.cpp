@@ -10,6 +10,7 @@
 #include <QCoreApplication>
 #include <QDesktopServices>
 #include <QFile>
+#include <QGuiApplication>
 #include <QImage>
 #include <QNetworkReply>
 #include <QStringList>
